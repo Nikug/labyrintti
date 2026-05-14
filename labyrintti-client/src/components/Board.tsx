@@ -1,7 +1,9 @@
 import { createElementSize } from "@solid-primitives/resize-observer";
 import { Component, createMemo, createSignal, For } from "solid-js";
-import { GamePiece } from "../types";
+import { GamePieceWithObject } from "../types";
+import { playerColors } from "../pieces";
 import PieceSwitch from "./PieceSwitch";
+import ObjectWrapper from "./ObjectWrapper";
 
 interface Props {
   rows: number;
@@ -16,19 +18,45 @@ const Board: Component<Props> = (props) => {
   const randomOrientation = () => {
     return ["up", "down", "left", "right"][
       Math.floor(Math.random() * 4)
-    ] as GamePiece["orientation"];
+    ] as GamePieceWithObject["orientation"];
   };
 
   const randomPieceType = () => {
-    return ["L", "I", "T"][Math.floor(Math.random() * 3)] as GamePiece["type"];
+    return ["L", "I", "T"][Math.floor(Math.random() * 3)] as GamePieceWithObject["type"];
   };
 
-  const pieces = createMemo<GamePiece[][]>(() => {
-    const result: GamePiece[][] = [];
+  const getHomePieceOrientation = (x: number, y: number) => {
+    if (y === 0 && x === 0) return "down";
+    if (y === 0 && x > 0) return "left";
+    if (x === 0 && y > 0) return "right";
+    return "up";
+  };
+
+  const shouldBeHomePiece = (x: number, y: number) => {
+    if (y === 0 && x === 0) return true;
+    if (y === 0 && x === props.columns - 1) return true;
+    if (x === 0 && y === props.rows - 1) return true;
+    if (x === props.columns - 1 && y === props.rows - 1) return true;
+    return false;
+  };
+
+  const pieces = createMemo<GamePieceWithObject[][]>(() => {
+    const result: GamePieceWithObject[][] = [];
+    let colorIndex = 0;
     for (let y = 0; y < props.rows; ++y) {
       result.push([]);
       for (let x = 0; x < props.columns; ++x) {
-        result[y].push({ type: randomPieceType(), orientation: randomOrientation() });
+        if (shouldBeHomePiece(x, y)) {
+          result[y].push({
+            type: "L",
+            orientation: getHomePieceOrientation(x, y),
+            hasObject: true,
+            playerColor: playerColors[colorIndex],
+          });
+          colorIndex = colorIndex + 1;
+        } else {
+          result[y].push({ type: randomPieceType(), orientation: randomOrientation() });
+        }
       }
     }
 
@@ -45,7 +73,19 @@ const Board: Component<Props> = (props) => {
       }}
     >
       <For each={pieces()}>
-        {(row) => <For each={row}>{(piece) => <PieceSwitch piece={piece} />}</For>}
+        {(row) => (
+          <For each={row}>
+            {(piece) =>
+              piece.hasObject ? (
+                <ObjectWrapper objectType="home" playerColor={piece.playerColor}>
+                  <PieceSwitch piece={piece} />
+                </ObjectWrapper>
+              ) : (
+                <PieceSwitch piece={piece} />
+              )
+            }
+          </For>
+        )}
       </For>
     </div>
   );
