@@ -1,5 +1,5 @@
 import { createElementSize } from "@solid-primitives/resize-observer";
-import { Component, createMemo, createSignal, For } from "solid-js";
+import { Component, createMemo, createSignal, For, Show } from "solid-js";
 import { GamePieceWithObject } from "../types";
 import { playerColors } from "../pieces";
 import PieceSwitch from "./PieceSwitch";
@@ -75,15 +75,13 @@ const Board: Component<Props> = (props) => {
       <For each={pieces()}>
         {(row) => (
           <For each={row}>
-            {(piece) =>
-              piece.hasObject ? (
+            {(piece) => (
+              <Show when={piece.hasObject} fallback={<PieceSwitch piece={piece} />}>
                 <ObjectWrapper objectType="home" playerColor={piece.playerColor}>
                   <PieceSwitch piece={piece} />
                 </ObjectWrapper>
-              ) : (
-                <PieceSwitch piece={piece} />
-              )
-            }
+              </Show>
+            )}
           </For>
         )}
       </For>
