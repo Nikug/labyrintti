@@ -6,7 +6,7 @@ import PlayerHand from "./components/PlayerHand";
 const App: Component = () => {
   return (
     <GameStateProvider>
-      <div class="w-screen h-screen flex justify-start items-center flex-col mt-8 gap-4">
+      <div class="w-screen h-screen flex justify-start items-center flex-col pt-8 gap-4">
         <div class="w-150">
           <Board rows={7} columns={7} />
         </div>
