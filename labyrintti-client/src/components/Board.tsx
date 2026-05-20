@@ -1,8 +1,8 @@
 import { Component, For, onMount, Show } from "solid-js";
-import PieceSwitch from "./PieceSwitch";
 import ObjectWrapper from "./ObjectWrapper";
 import { useGameState } from "../contexts/GameStateContext";
 import { GamePiece } from "../types";
+import Piece from "./Piece";
 
 interface Props {
   rows: number;
@@ -20,22 +20,15 @@ const Board: Component<Props> = (props) => {
     rowIndex: number,
     columnIndex: number,
   ): ((piece: GamePiece) => void) | undefined => {
+    const position = { x: columnIndex, y: rowIndex };
     if (rowIndex === 0) {
-      return (piece: GamePiece) => {
-        playPiece(piece, { x: columnIndex, y: rowIndex }, "down");
-      };
+      return () => playPiece(position, "down");
     } else if (rowIndex === gameState.settings.rows - 1) {
-      return (piece: GamePiece) => {
-        playPiece(piece, { x: columnIndex, y: rowIndex }, "up");
-      };
+      return () => playPiece(position, "up");
     } else if (columnIndex === 0) {
-      return (piece: GamePiece) => {
-        playPiece(piece, { x: columnIndex, y: rowIndex }, "right");
-      };
+      return () => playPiece(position, "right");
     } else if (columnIndex === gameState.settings.columns - 1) {
-      return (piece: GamePiece) => {
-        playPiece(piece, { x: columnIndex, y: rowIndex }, "left");
-      };
+      return () => playPiece(position, "left");
     }
 
     return undefined;
@@ -55,12 +48,10 @@ const Board: Component<Props> = (props) => {
             {(piece, columnIndex) => (
               <Show
                 when={piece.hasObject}
-                fallback={
-                  <PieceSwitch piece={piece} onClick={pieceOnClick(rowIndex(), columnIndex())} />
-                }
+                fallback={<Piece piece={piece} onClick={pieceOnClick(rowIndex(), columnIndex())} />}
               >
                 <ObjectWrapper objectType="home" playerColor={piece.playerColor}>
-                  <PieceSwitch piece={piece} onClick={pieceOnClick(rowIndex(), columnIndex())} />
+                  <Piece piece={piece} onClick={pieceOnClick(rowIndex(), columnIndex())} />
                 </ObjectWrapper>
               </Show>
             )}

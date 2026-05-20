@@ -1,14 +1,15 @@
 import { Component } from "solid-js";
 import { GamePiece } from "../types";
-import { orientationToStyle } from "../pieceUtils";
 import clsx from "clsx";
+import { orientationToStyle } from "../pieceUtils";
+import PieceShapeSwitch from "./PieceShapeSwitch";
 
 interface Props {
   piece: GamePiece;
   onClick?: (piece: GamePiece) => void;
 }
 
-const TShapePiece: Component<Props> = (props) => {
+const Piece: Component<Props> = (props) => {
   const clickable = () => props.onClick != null;
 
   return (
@@ -19,16 +20,9 @@ const TShapePiece: Component<Props> = (props) => {
       style={{ transform: orientationToStyle(props.piece.orientation) }}
       onClick={() => props.onClick?.(props.piece)}
     >
-      <svg viewBox="0 0 100 100" class="w-full h-full">
-        <path
-          d="M 25 0 L 25 100 L 75 100 L 75 75 L 100 75 L 100 25 L 75 25 L 75 0 Z"
-          fill="white"
-          stroke="black"
-          stroke-width="2"
-        />
-      </svg>
+      <PieceShapeSwitch piece={props.piece} />
     </div>
   );
 };
 
-export default TShapePiece;
+export default Piece;

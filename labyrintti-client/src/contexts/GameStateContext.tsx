@@ -11,7 +11,7 @@ export interface GameStateContextValues {
 
 export interface GameStateContextMethods {
   initializeGame: () => void;
-  playPiece: (piece: GamePieceWithObject, position: Vector2, direction: Direction) => boolean;
+  playPiece: (position: Vector2, direction: Direction) => boolean;
   rotateExtraPiece: (newOrientation: Direction) => void;
 }
 
@@ -99,17 +99,14 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
     setStore("game", "board", newBoard);
   };
 
-  const playPiece = (
-    piece: GamePieceWithObject,
-    position: Vector2,
-    direction: Direction,
-  ): boolean => {
+  const playPiece = (position: Vector2, direction: Direction): boolean => {
     if (
       position.x !== 0 &&
       position.x !== store.settings.columns - 1 &&
       position.y !== 0 &&
       position.y !== store.settings.rows - 1
     ) {
+      console.log("Illegal move, cannot play at", position);
       return false;
     }
 
