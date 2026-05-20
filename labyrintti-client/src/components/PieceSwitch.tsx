@@ -7,20 +7,24 @@ import TShapePiece from "./TShapePiece";
 
 interface PieceProps {
   piece: GamePiece;
+  onClick?: (piece: GamePiece) => void;
 }
 
 const pieces = {
-  L: (props: PieceProps) => <LShapePiece piece={props.piece} />,
-  I: (props: PieceProps) => <IShapePiece piece={props.piece} />,
-  T: (props: PieceProps) => <TShapePiece piece={props.piece} />,
+  L: (props: PieceProps) => <LShapePiece piece={props.piece} onClick={props.onClick} />,
+  I: (props: PieceProps) => <IShapePiece piece={props.piece} onClick={props.onClick} />,
+  T: (props: PieceProps) => <TShapePiece piece={props.piece} onClick={props.onClick} />,
 };
 
 interface Props {
   piece: GamePiece;
+  onClick?: (piece: GamePiece) => void;
 }
 
 const PieceSwitch: Component<Props> = (props) => {
-  return <Dynamic component={pieces[props.piece.type]} piece={props.piece} />;
+  return (
+    <Dynamic component={pieces[props.piece.type]} piece={props.piece} onClick={props.onClick} />
+  );
 };
 
 export default PieceSwitch;

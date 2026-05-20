@@ -1,8 +1,9 @@
 import { Component, createContext, JSX, useContext } from "solid-js";
-import { GamePieceWithObject, GameSettings, GameState } from "../types";
-import { createStore } from "solid-js/store";
+import { Direction, GamePieceWithObject, GameSettings, GameState, Vector2 } from "../types";
+import { createStore, produce } from "solid-js/store";
 import { playerColors } from "../pieces";
 
+// Context setup
 export interface GameStateContextValues {
   game: GameState;
   settings: GameSettings;
@@ -10,17 +11,21 @@ export interface GameStateContextValues {
 
 export interface GameStateContextMethods {
   initializeGame: () => void;
+  playPiece: (piece: GamePieceWithObject, position: Vector2, direction: Direction) => boolean;
+  rotateExtraPiece: (newOrientation: Direction) => void;
 }
 
 export type GameStateContext = [GameStateContextValues, GameStateContextMethods];
 
 export const GameStateContext = createContext<GameStateContext>([
   {
-    game: { board: [] },
+    game: { board: [], extraPiece: null! },
     settings: { rows: 7, columns: 7 },
   },
   {
     initializeGame: () => {},
+    playPiece: () => false,
+    rotateExtraPiece: () => {},
   },
 ]);
 
@@ -28,25 +33,33 @@ export const useGameState = () => {
   return useContext(GameStateContext);
 };
 
+// Random helpers, move somewhere
+const randomOrientation = () => {
+  return ["up", "down", "left", "right"][
+    Math.floor(Math.random() * 4)
+  ] as GamePieceWithObject["orientation"];
+};
+
+const randomPieceType = () => {
+  return ["L", "I", "T"][Math.floor(Math.random() * 3)] as GamePieceWithObject["type"];
+};
+
+// Context provider implementation
 interface ProviderProps {
   children: JSX.Element;
 }
 
 export const GameStateProvider: Component<ProviderProps> = (props) => {
   const [store, setStore] = createStore<GameStateContextValues>({
-    game: { board: [] },
+    game: {
+      board: [],
+      extraPiece: {
+        type: randomPieceType(),
+        orientation: randomOrientation(),
+      },
+    },
     settings: { rows: 7, columns: 7 },
   });
-
-  const randomOrientation = () => {
-    return ["up", "down", "left", "right"][
-      Math.floor(Math.random() * 4)
-    ] as GamePieceWithObject["orientation"];
-  };
-
-  const randomPieceType = () => {
-    return ["L", "I", "T"][Math.floor(Math.random() * 3)] as GamePieceWithObject["type"];
-  };
 
   const getHomePieceOrientation = (x: number, y: number) => {
     if (y === 0 && x === 0) return "down";
@@ -86,11 +99,84 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
     setStore("game", "board", newBoard);
   };
 
+  const playPiece = (
+    piece: GamePieceWithObject,
+    position: Vector2,
+    direction: Direction,
+  ): boolean => {
+    if (
+      position.x !== 0 &&
+      position.x !== store.settings.columns - 1 &&
+      position.y !== 0 &&
+      position.y !== store.settings.rows - 1
+    ) {
+      return false;
+    }
+
+    switch (direction) {
+      case "up":
+        setStore(
+          "game",
+          produce((game) => {
+            const rows = game.board.length;
+            const extraPiece = game.extraPiece;
+            game.extraPiece = game.board[0][position.x];
+            for (let y = 0; y < rows - 1; y++) {
+              game.board[y][position.x] = game.board[y + 1][position.x];
+            }
+            game.board[position.y][position.x] = extraPiece;
+          }),
+        );
+        break;
+      case "down":
+        setStore(
+          "game",
+          produce((game) => {
+            const rows = game.board.length;
+            const extraPiece = game.extraPiece;
+            game.extraPiece = game.board[rows - 1][position.x];
+            for (let y = game.board.length - 1; y > 0; y--) {
+              game.board[y][position.x] = game.board[y - 1][position.x];
+            }
+            game.board[position.y][position.x] = extraPiece;
+          }),
+        );
+        break;
+      case "left":
+        setStore(
+          "game",
+          produce((game) => {
+            const row = game.board[position.y];
+            const extraPiece = game.extraPiece;
+            game.extraPiece = row.shift()!;
+            row.push(extraPiece);
+          }),
+        );
+        break;
+      case "right":
+        setStore(
+          "game",
+          produce((game) => {
+            const row = game.board[position.y];
+            const extraPiece = game.extraPiece;
+            game.extraPiece = row.pop()!;
+            row.unshift(extraPiece);
+          }),
+        );
+        break;
+    }
+
+    return true;
+  };
+
   const contextValue = (): GameStateContext => {
     return [
       store,
       {
         initializeGame: createBoard,
+        playPiece,
+        rotateExtraPiece: (newOrientation: Direction) =>
+          setStore("game", "extraPiece", "orientation", newOrientation),
       },
     ];
   };

@@ -2,6 +2,7 @@ import { Component, For, onMount, Show } from "solid-js";
 import PieceSwitch from "./PieceSwitch";
 import ObjectWrapper from "./ObjectWrapper";
 import { useGameState } from "../contexts/GameStateContext";
+import { GamePiece } from "../types";
 
 interface Props {
   rows: number;
@@ -9,11 +10,36 @@ interface Props {
 }
 
 const Board: Component<Props> = (props) => {
-  const [gameState, { initializeGame }] = useGameState();
+  const [gameState, { initializeGame, playPiece }] = useGameState();
 
   onMount(() => {
     initializeGame();
   });
+
+  const pieceOnClick = (
+    rowIndex: number,
+    columnIndex: number,
+  ): ((piece: GamePiece) => void) | undefined => {
+    if (rowIndex === 0) {
+      return (piece: GamePiece) => {
+        playPiece(piece, { x: columnIndex, y: rowIndex }, "down");
+      };
+    } else if (rowIndex === gameState.settings.rows - 1) {
+      return (piece: GamePiece) => {
+        playPiece(piece, { x: columnIndex, y: rowIndex }, "up");
+      };
+    } else if (columnIndex === 0) {
+      return (piece: GamePiece) => {
+        playPiece(piece, { x: columnIndex, y: rowIndex }, "right");
+      };
+    } else if (columnIndex === gameState.settings.columns - 1) {
+      return (piece: GamePiece) => {
+        playPiece(piece, { x: columnIndex, y: rowIndex }, "left");
+      };
+    }
+
+    return undefined;
+  };
 
   return (
     <div
@@ -24,12 +50,17 @@ const Board: Component<Props> = (props) => {
       }}
     >
       <For each={gameState.game.board}>
-        {(row) => (
+        {(row, rowIndex) => (
           <For each={row}>
-            {(piece) => (
-              <Show when={piece.hasObject} fallback={<PieceSwitch piece={piece} />}>
+            {(piece, columnIndex) => (
+              <Show
+                when={piece.hasObject}
+                fallback={
+                  <PieceSwitch piece={piece} onClick={pieceOnClick(rowIndex(), columnIndex())} />
+                }
+              >
                 <ObjectWrapper objectType="home" playerColor={piece.playerColor}>
-                  <PieceSwitch piece={piece} />
+                  <PieceSwitch piece={piece} onClick={pieceOnClick(rowIndex(), columnIndex())} />
                 </ObjectWrapper>
               </Show>
             )}
