@@ -8,6 +8,7 @@ export interface GamePiece {
 export interface GamePieceWithObject extends GamePiece {
   hasObject?: true;
   playerColor?: string;
+  fixed?: true;
 }
 
 export interface GameState {
@@ -18,6 +19,7 @@ export interface GameState {
 export interface GameSettings {
   rows: number;
   columns: number;
+  fixedTiles: boolean;
 }
 
 export interface Vector2 {

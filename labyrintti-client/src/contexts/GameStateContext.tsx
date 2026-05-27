@@ -20,7 +20,7 @@ export type GameStateContext = [GameStateContextValues, GameStateContextMethods]
 export const GameStateContext = createContext<GameStateContext>([
   {
     game: { board: [], extraPiece: null! },
-    settings: { rows: 7, columns: 7 },
+    settings: { rows: 7, columns: 7, fixedTiles: true },
   },
   {
     initializeGame: () => {},
@@ -58,7 +58,7 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
         orientation: randomOrientation(),
       },
     },
-    settings: { rows: 7, columns: 7 },
+    settings: { rows: 7, columns: 7, fixedTiles: true },
   });
 
   const getHomePieceOrientation = (x: number, y: number) => {
@@ -67,6 +67,8 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
     if (x === 0 && y > 0) return "right";
     return "up";
   };
+
+  const shouldBeFixed = (x: number, y: number) => x % 2 === 0 && y % 2 === 0;
 
   const shouldBeHomePiece = (x: number, y: number, maxX: number, maxY: number) => {
     if (y === 0 && x === 0) return true;
@@ -88,8 +90,11 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
             orientation: getHomePieceOrientation(x, y),
             hasObject: true,
             playerColor: playerColors[colorIndex],
+            fixed: true,
           });
           colorIndex = colorIndex + 1;
+        } else if (store.settings.fixedTiles && shouldBeFixed(x, y)) {
+          newBoard[y].push({ type: randomPieceType(), orientation: randomOrientation(), fixed: true });
         } else {
           newBoard[y].push({ type: randomPieceType(), orientation: randomOrientation() });
         }
@@ -107,6 +112,15 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
       position.y !== store.settings.rows - 1
     ) {
       console.log("Illegal move, cannot play at", position);
+      return false;
+    }
+
+    const isColumnPush = direction === "up" || direction === "down";
+    const anchorPiece = isColumnPush
+      ? store.game.board[0][position.x]
+      : store.game.board[position.y][0];
+    if (anchorPiece?.fixed) {
+      console.log("Illegal move, cannot push a fixed row/column");
       return false;
     }
 

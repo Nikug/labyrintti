@@ -21,6 +21,9 @@ const Board: Component<Props> = (props) => {
     columnIndex: number,
   ): ((piece: GamePiece) => void) | undefined => {
     const position = { x: columnIndex, y: rowIndex };
+
+    if (gameState.game.board[rowIndex]?.[columnIndex]?.fixed) return undefined;
+
     if (rowIndex === 0) {
       return () => playPiece(position, "down");
     } else if (rowIndex === gameState.settings.rows - 1) {
