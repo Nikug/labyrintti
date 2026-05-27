@@ -11,9 +11,19 @@ export interface GamePieceWithObject extends GamePiece {
   fixed?: true;
 }
 
+export interface Player {
+  id: number;
+  color: string;
+  position: Vector2;
+}
+
 export interface GameState {
   board: GamePieceWithObject[][];
   extraPiece: GamePieceWithObject;
+  players: Player[];
+  phase: "push" | "move";
+  activePlayer: number;
+  lastPush: { position: Vector2; direction: Direction } | null;
 }
 
 export interface GameSettings {

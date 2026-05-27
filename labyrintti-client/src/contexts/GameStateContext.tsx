@@ -13,19 +13,21 @@ export interface GameStateContextMethods {
   initializeGame: () => void;
   playPiece: (position: Vector2, direction: Direction) => boolean;
   rotateExtraPiece: (newOrientation: Direction) => void;
+  movePlayer: (position: Vector2) => void;
 }
 
 export type GameStateContext = [GameStateContextValues, GameStateContextMethods];
 
 export const GameStateContext = createContext<GameStateContext>([
   {
-    game: { board: [], extraPiece: null! },
+    game: { board: [], extraPiece: null!, players: [], phase: "push", activePlayer: 0, lastPush: null },
     settings: { rows: 7, columns: 7, fixedTiles: true },
   },
   {
     initializeGame: () => {},
     playPiece: () => false,
     rotateExtraPiece: () => {},
+    movePlayer: () => {},
   },
 ]);
 
@@ -57,6 +59,10 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
         type: randomPieceType(),
         orientation: randomOrientation(),
       },
+      players: [],
+      phase: "push",
+      activePlayer: 0,
+      lastPush: null,
     },
     settings: { rows: 7, columns: 7, fixedTiles: true },
   });
@@ -102,6 +108,21 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
     }
 
     setStore("game", "board", newBoard);
+    setStore("game", "phase", "push");
+    setStore("game", "activePlayer", 0);
+    setStore("game", "lastPush", null);
+
+    const corners = [
+      { x: 0, y: 0 },
+      { x: store.settings.columns - 1, y: 0 },
+      { x: 0, y: store.settings.rows - 1 },
+      { x: store.settings.columns - 1, y: store.settings.rows - 1 },
+    ];
+    setStore(
+      "game",
+      "players",
+      playerColors.map((color, id) => ({ id, color, position: corners[id] })),
+    );
   };
 
   const playPiece = (position: Vector2, direction: Direction): boolean => {
@@ -123,6 +144,33 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
       console.log("Illegal move, cannot push a fixed row/column");
       return false;
     }
+
+    if (store.game.lastPush) {
+      const { direction: lastDir, position: lastPos } = store.game.lastPush;
+      const opposites: Record<Direction, Direction> = { up: "down", down: "up", left: "right", right: "left" };
+      if (direction === opposites[lastDir]) {
+        const sameIndex = isColumnPush ? position.x === lastPos.x : position.y === lastPos.y;
+        if (sameIndex) {
+          console.log("Illegal move, cannot reverse the previous push");
+          return false;
+        }
+      }
+    }
+
+    const rows = store.game.board.length;
+    const cols = store.game.board[0]?.length ?? 0;
+    const ejectedPos: Record<Direction, Vector2> = {
+      up:    { x: position.x, y: 0 },
+      down:  { x: position.x, y: rows - 1 },
+      left:  { x: 0,          y: position.y },
+      right: { x: cols - 1,   y: position.y },
+    };
+    const enteredPos: Record<Direction, Vector2> = {
+      up:    { x: position.x, y: rows - 1 },
+      down:  { x: position.x, y: 0 },
+      left:  { x: cols - 1,   y: position.y },
+      right: { x: 0,          y: position.y },
+    };
 
     switch (direction) {
       case "up":
@@ -177,7 +225,27 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
         break;
     }
 
+    const ejected = ejectedPos[direction];
+    const entered = enteredPos[direction];
+    setStore("game", "players", (players) =>
+      players.map((p) =>
+        p.position.x === ejected.x && p.position.y === ejected.y
+          ? { ...p, position: entered }
+          : p,
+      ),
+    );
+
+    setStore("game", "lastPush", { position, direction });
+    setStore("game", "phase", "move");
+
     return true;
+  };
+
+  const movePlayer = (position: Vector2) => {
+    const playerCount = store.game.players.length;
+    setStore("game", "players", store.game.activePlayer, "position", position);
+    setStore("game", "activePlayer", (i) => (i + 1) % playerCount);
+    setStore("game", "phase", "push");
   };
 
   const contextValue = (): GameStateContext => {
@@ -188,6 +256,7 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
         playPiece,
         rotateExtraPiece: (newOrientation: Direction) =>
           setStore("game", "extraPiece", "orientation", newOrientation),
+        movePlayer,
       },
     ];
   };
