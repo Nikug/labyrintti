@@ -1,7 +1,7 @@
 import { Component } from "solid-js";
 import { GamePiece } from "../types";
 import clsx from "clsx";
-import { orientationToStyle } from "../pieceUtils";
+import { orientationToStyle } from "../util/pieceUtils";
 import PieceShapeSwitch from "./PieceShapeSwitch";
 
 interface Props {

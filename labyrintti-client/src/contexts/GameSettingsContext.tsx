@@ -12,7 +12,7 @@ export interface GameSettingsContextMethods {
 export type GameSettingsContext = [GameSettingsContextValues, GameSettingsContextMethods];
 
 export const GameSettingsContext = createContext<GameSettingsContext>([
-  { botsEnabled: true },
+  { botsEnabled: false },
   { toggleBots: () => {} },
 ]);
 
@@ -24,7 +24,7 @@ interface ProviderProps {
 
 export const GameSettingsProvider: Component<ProviderProps> = (props) => {
   const [settings, setSettings] = createStore<GameSettingsContextValues>({
-    botsEnabled: true,
+    botsEnabled: false,
   });
 
   const contextValue: GameSettingsContext = [

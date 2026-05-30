@@ -3,7 +3,7 @@ import ObjectWrapper from "./ObjectWrapper";
 import { useGameState } from "../contexts/GameStateContext";
 import { GamePiece, Vector2 } from "../types";
 import Piece from "./Piece";
-import { getReachable } from "../pathUtils";
+import { getReachable } from "../util/pathUtils";
 import Player from "./Player";
 import HighlightPiece from "./HighlightPiece";
 
@@ -98,16 +98,12 @@ const Board: Component<Props> = (props) => {
           <For each={row}>
             {(piece, columnIndex) => (
               <div class="relative w-full h-full">
-                <Show
-                  when={piece.hasObject}
-                  fallback={
-                    <Piece piece={piece} onClick={pieceOnClick(rowIndex(), columnIndex())} />
-                  }
+                <ObjectWrapper
+                  object={piece.object}
+                  playerColor={piece.playerColor}
                 >
-                  <ObjectWrapper objectType="home" playerColor={piece.playerColor}>
-                    <Piece piece={piece} onClick={pieceOnClick(rowIndex(), columnIndex())} />
-                  </ObjectWrapper>
-                </Show>
+                  <Piece piece={piece} onClick={pieceOnClick(rowIndex(), columnIndex())} />
+                </ObjectWrapper>
                 <Show when={reachable()?.[rowIndex()]?.[columnIndex()]}>
                   <HighlightPiece variant="reachable" />
                 </Show>

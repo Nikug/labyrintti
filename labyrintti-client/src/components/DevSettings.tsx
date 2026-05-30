@@ -1,10 +1,12 @@
 import { Component, createSignal, Show } from "solid-js";
 import { Portal } from "solid-js/web";
 import { useGameSettings } from "../contexts/GameSettingsContext";
+import { useGameState } from "../contexts/GameStateContext";
 
 const DevSettings: Component = () => {
   const [open, setOpen] = createSignal(false);
   const [gameSettings, { toggleBots }] = useGameSettings();
+  const [, { initializeGame }] = useGameState();
 
   return (
     <div class="flex flex-col items-start pt-1">
@@ -40,7 +42,13 @@ const DevSettings: Component = () => {
                   </div>
                 </div>
 
-                <div class="flex justify-end">
+                <div class="flex justify-between">
+                  <button
+                    onClick={() => { initializeGame(); setOpen(false); }}
+                    class="border-2 border-zinc-600 text-zinc-500 hover:border-red-500 hover:text-red-400 px-8 py-2 text-sm tracking-[0.25em] transition-colors"
+                  >
+                    RESET
+                  </button>
                   <button
                     onClick={() => setOpen(false)}
                     class="border-2 border-zinc-500 text-zinc-400 hover:border-zinc-200 hover:text-zinc-100 px-8 py-2 text-sm tracking-[0.25em] transition-colors"

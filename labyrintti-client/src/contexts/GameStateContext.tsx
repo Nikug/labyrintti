@@ -1,7 +1,9 @@
 import { Component, createContext, JSX, useContext } from "solid-js";
 import { Direction, GamePieceWithObject, GameSettings, GameState, Vector2 } from "../types";
 import { createStore, produce } from "solid-js/store";
-import { playerColors } from "../pieces";
+import { playerColors } from "../util/pieces";
+import { ALL_ITEMS, ITEMS_PER_PLAYER } from "../util/items";
+import { shuffle } from "../util/array";
 
 // Context setup
 export interface GameStateContextValues {
@@ -27,6 +29,7 @@ export const GameStateContext = createContext<GameStateContext>([
       phase: "push",
       activePlayer: 0,
       lastPush: null,
+      winner: null,
     },
     settings: { rows: 7, columns: 7, fixedTiles: true },
   },
@@ -53,6 +56,27 @@ const randomPieceType = () => {
   return ["L", "I", "T"][Math.floor(Math.random() * 3)] as GamePieceWithObject["type"];
 };
 
+const buildPushLine = (
+  position: Vector2,
+  direction: Direction,
+  rows: number,
+  cols: number,
+): Vector2[] => {
+  const line: Vector2[] = [];
+  if (direction === "up" || direction === "down") {
+    for (let i = 0; i < rows; i++) {
+      const y = direction === "down" ? i : rows - 1 - i;
+      line.push({ x: position.x, y });
+    }
+  } else {
+    for (let i = 0; i < cols; i++) {
+      const x = direction === "right" ? i : cols - 1 - i;
+      line.push({ x, y: position.y });
+    }
+  }
+  return line;
+};
+
 // Context provider implementation
 interface ProviderProps {
   children: JSX.Element;
@@ -70,6 +94,7 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
       phase: "push",
       activePlayer: 0,
       lastPush: null,
+      winner: null,
     },
     settings: { rows: 7, columns: 7, fixedTiles: true },
   });
@@ -101,7 +126,7 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
           newBoard[y].push({
             type: "L",
             orientation: getHomePieceOrientation(x, y),
-            hasObject: true,
+            object: "home",
             playerColor: playerColors[colorIndex],
             fixed: true,
           });
@@ -118,21 +143,49 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
       }
     }
 
-    setStore("game", "board", newBoard);
-    setStore("game", "phase", "push");
-    setStore("game", "activePlayer", 0);
-    setStore("game", "lastPush", null);
-
     const corners = [
       { x: 0, y: 0 },
       { x: store.settings.columns - 1, y: 0 },
       { x: 0, y: store.settings.rows - 1 },
       { x: store.settings.columns - 1, y: store.settings.rows - 1 },
     ];
+
+    // Assign items to players first — board placement is derived from these assignments.
+    const shuffledItems = shuffle(ALL_ITEMS);
+    const playerTargets = playerColors.map((_, id) =>
+      shuffledItems.slice(id * ITEMS_PER_PLAYER, (id + 1) * ITEMS_PER_PLAYER),
+    );
+
+    // Place only the assigned items on random tiles.
+    const movablePositions: Vector2[] = [];
+    for (let y = 0; y < store.settings.rows; y++) {
+      for (let x = 0; x < store.settings.columns; x++) {
+        movablePositions.push({ x, y });
+      }
+    }
+    const shuffledPositions = shuffle(movablePositions);
+    playerTargets.flat().forEach((item, i) => {
+      newBoard[shuffledPositions[i].y][shuffledPositions[i].x].object = item;
+    });
+
+    setStore("game", "board", newBoard);
+    setStore("game", "phase", "push");
+    setStore("game", "activePlayer", 0);
+    setStore("game", "lastPush", null);
+    setStore("game", "winner", null);
+
     setStore(
       "game",
       "players",
-      playerColors.map((color, id) => ({ id, color, position: corners[id], isBot: true })),
+      playerColors.map((color, id) => ({
+        id,
+        color,
+        position: corners[id],
+        homePosition: corners[id],
+        isBot: true,
+        targetItems: playerTargets[id],
+        collectedItems: [],
+      })),
     );
   };
 
@@ -175,74 +228,30 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
 
     const rows = store.game.board.length;
     const cols = store.game.board[0]?.length ?? 0;
-    const ejectedPos: Record<Direction, Vector2> = {
-      up: { x: position.x, y: 0 },
-      down: { x: position.x, y: rows - 1 },
-      left: { x: 0, y: position.y },
-      right: { x: cols - 1, y: position.y },
-    };
-    const enteredPos: Record<Direction, Vector2> = {
-      up: { x: position.x, y: rows - 1 },
-      down: { x: position.x, y: 0 },
-      left: { x: cols - 1, y: position.y },
-      right: { x: 0, y: position.y },
-    };
 
-    switch (direction) {
-      case "up":
-        setStore(
-          "game",
-          produce((game) => {
-            const rows = game.board.length;
-            const extraPiece = game.extraPiece;
-            game.extraPiece = game.board[0][position.x];
-            for (let y = 0; y < rows - 1; y++) {
-              game.board[y][position.x] = game.board[y + 1][position.x];
-            }
-            game.board[position.y][position.x] = extraPiece;
-          }),
-        );
-        break;
-      case "down":
-        setStore(
-          "game",
-          produce((game) => {
-            const rows = game.board.length;
-            const extraPiece = game.extraPiece;
-            game.extraPiece = game.board[rows - 1][position.x];
-            for (let y = game.board.length - 1; y > 0; y--) {
-              game.board[y][position.x] = game.board[y - 1][position.x];
-            }
-            game.board[position.y][position.x] = extraPiece;
-          }),
-        );
-        break;
-      case "left":
-        setStore(
-          "game",
-          produce((game) => {
-            const row = game.board[position.y];
-            const extraPiece = game.extraPiece;
-            game.extraPiece = row.shift()!;
-            row.push(extraPiece);
-          }),
-        );
-        break;
-      case "right":
-        setStore(
-          "game",
-          produce((game) => {
-            const row = game.board[position.y];
-            const extraPiece = game.extraPiece;
-            game.extraPiece = row.pop()!;
-            row.unshift(extraPiece);
-          }),
-        );
-        break;
-    }
+    // Every push is the same operation regardless of direction: walk the line
+    // of tiles from the entry edge to the exit edge, sliding the extra piece in
+    // at the front and pushing the far tile out the back.
+    const line = buildPushLine(position, direction, rows, cols);
+    const entered = line[0];
+    const ejected = line[line.length - 1];
 
-    const ejected = ejectedPos[direction];
-    const entered = enteredPos[direction];
+    setStore(
+      "game",
+      produce((game) => {
+        let carried = game.extraPiece;
+        for (const { x, y } of line) {
+          const displaced = game.board[y][x];
+          game.board[y][x] = carried;
+          carried = displaced;
+        }
+        // The tile shoved off the exit edge becomes the new extra piece, taking
+        // any treasure sitting on it into the player's hand.
+        game.extraPiece = carried;
+      }),
+    );
+
+    // A player standing on the ejected tile rides it around to the entry edge.
     setStore("game", "players", (players) =>
       players.map((p) =>
         p.position.x === ejected.x && p.position.y === ejected.y ? { ...p, position: entered } : p,
@@ -256,10 +265,32 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
   };
 
   const movePlayer = (position: Vector2) => {
-    const playerCount = store.game.players.length;
-    setStore("game", "players", store.game.activePlayer, "position", position);
-    setStore("game", "activePlayer", (i) => (i + 1) % playerCount);
-    setStore("game", "phase", "push");
+    setStore(
+      "game",
+      produce((game) => {
+        const player = game.players[game.activePlayer];
+        player.position = position;
+
+        // Landing on one of your own target treasures collects it.
+        const tile = game.board[position.y][position.x];
+        if (tile.object !== undefined && player.targetItems.includes(tile.object)) {
+          player.collectedItems.push(tile.object);
+          tile.object = undefined;
+        }
+
+        // You win by collecting every target and returning to your home corner.
+        const allCollected = player.collectedItems.length === ITEMS_PER_PLAYER;
+        const atHome = position.x === player.homePosition.x && position.y === player.homePosition.y;
+        if (allCollected && atHome) {
+          game.winner = player.id;
+          return;
+        }
+
+        // Otherwise hand the turn to the next player, who pushes first.
+        game.activePlayer = (game.activePlayer + 1) % game.players.length;
+        game.phase = "push";
+      }),
+    );
   };
 
   const contextValue = (): GameStateContext => {

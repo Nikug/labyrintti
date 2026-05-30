@@ -6,7 +6,7 @@ export interface GamePiece {
 }
 
 export interface GamePieceWithObject extends GamePiece {
-  hasObject?: true;
+  object?: string;
   playerColor?: string;
   fixed?: true;
 }
@@ -15,7 +15,10 @@ export interface Player {
   id: number;
   color: string;
   position: Vector2;
+  homePosition: Vector2;
   isBot?: true;
+  targetItems: string[];
+  collectedItems: string[];
 }
 
 export interface GameState {
@@ -25,6 +28,7 @@ export interface GameState {
   phase: "push" | "move";
   activePlayer: number;
   lastPush: { position: Vector2; direction: Direction } | null;
+  winner: number | null;
 }
 
 export interface GameSettings {
