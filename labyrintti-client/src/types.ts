@@ -15,6 +15,7 @@ export interface Player {
   id: number;
   color: string;
   position: Vector2;
+  isBot?: true;
 }
 
 export interface GameState {

@@ -32,10 +32,14 @@ const Board: Component<Props> = (props) => {
     const rows = gameState.settings.rows;
     const cols = gameState.settings.columns;
     switch (direction) {
-      case "up":    return { x: position.x, y: 0 };
-      case "down":  return { x: position.x, y: rows - 1 };
-      case "left":  return { x: 0,          y: position.y };
-      case "right": return { x: cols - 1,   y: position.y };
+      case "up":
+        return { x: position.x, y: 0 };
+      case "down":
+        return { x: position.x, y: rows - 1 };
+      case "left":
+        return { x: 0, y: position.y };
+      case "right":
+        return { x: cols - 1, y: position.y };
     }
   });
 
@@ -53,9 +57,7 @@ const Board: Component<Props> = (props) => {
       return "valid";
     };
 
-    return gameState.game.board.map((row, y) =>
-      row.map((_, x) => highlightForTile(x, y)),
-    );
+    return gameState.game.board.map((row, y) => row.map((_, x) => highlightForTile(x, y)));
   });
 
   const pieceOnClick = (
@@ -98,7 +100,9 @@ const Board: Component<Props> = (props) => {
               <div class="relative w-full h-full">
                 <Show
                   when={piece.hasObject}
-                  fallback={<Piece piece={piece} onClick={pieceOnClick(rowIndex(), columnIndex())} />}
+                  fallback={
+                    <Piece piece={piece} onClick={pieceOnClick(rowIndex(), columnIndex())} />
+                  }
                 >
                   <ObjectWrapper objectType="home" playerColor={piece.playerColor}>
                     <Piece piece={piece} onClick={pieceOnClick(rowIndex(), columnIndex())} />
@@ -113,9 +117,11 @@ const Board: Component<Props> = (props) => {
                 <Show when={pushHighlights()?.[rowIndex()]?.[columnIndex()] === "undo"}>
                   <HighlightPiece variant="undo" />
                 </Show>
-                <For each={gameState.game.players.filter(
-                  (p) => p.position.x === columnIndex() && p.position.y === rowIndex(),
-                )}>
+                <For
+                  each={gameState.game.players.filter(
+                    (p) => p.position.x === columnIndex() && p.position.y === rowIndex(),
+                  )}
+                >
                   {(player) => <Player color={player.color} />}
                 </For>
               </div>

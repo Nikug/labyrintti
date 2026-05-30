@@ -20,7 +20,14 @@ export type GameStateContext = [GameStateContextValues, GameStateContextMethods]
 
 export const GameStateContext = createContext<GameStateContext>([
   {
-    game: { board: [], extraPiece: null!, players: [], phase: "push", activePlayer: 0, lastPush: null },
+    game: {
+      board: [],
+      extraPiece: null!,
+      players: [],
+      phase: "push",
+      activePlayer: 0,
+      lastPush: null,
+    },
     settings: { rows: 7, columns: 7, fixedTiles: true },
   },
   {
@@ -100,7 +107,11 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
           });
           colorIndex = colorIndex + 1;
         } else if (store.settings.fixedTiles && shouldBeFixed(x, y)) {
-          newBoard[y].push({ type: randomPieceType(), orientation: randomOrientation(), fixed: true });
+          newBoard[y].push({
+            type: randomPieceType(),
+            orientation: randomOrientation(),
+            fixed: true,
+          });
         } else {
           newBoard[y].push({ type: randomPieceType(), orientation: randomOrientation() });
         }
@@ -121,7 +132,7 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
     setStore(
       "game",
       "players",
-      playerColors.map((color, id) => ({ id, color, position: corners[id] })),
+      playerColors.map((color, id) => ({ id, color, position: corners[id], isBot: true })),
     );
   };
 
@@ -147,7 +158,12 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
 
     if (store.game.lastPush) {
       const { direction: lastDir, position: lastPos } = store.game.lastPush;
-      const opposites: Record<Direction, Direction> = { up: "down", down: "up", left: "right", right: "left" };
+      const opposites: Record<Direction, Direction> = {
+        up: "down",
+        down: "up",
+        left: "right",
+        right: "left",
+      };
       if (direction === opposites[lastDir]) {
         const sameIndex = isColumnPush ? position.x === lastPos.x : position.y === lastPos.y;
         if (sameIndex) {
@@ -160,16 +176,16 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
     const rows = store.game.board.length;
     const cols = store.game.board[0]?.length ?? 0;
     const ejectedPos: Record<Direction, Vector2> = {
-      up:    { x: position.x, y: 0 },
-      down:  { x: position.x, y: rows - 1 },
-      left:  { x: 0,          y: position.y },
-      right: { x: cols - 1,   y: position.y },
+      up: { x: position.x, y: 0 },
+      down: { x: position.x, y: rows - 1 },
+      left: { x: 0, y: position.y },
+      right: { x: cols - 1, y: position.y },
     };
     const enteredPos: Record<Direction, Vector2> = {
-      up:    { x: position.x, y: rows - 1 },
-      down:  { x: position.x, y: 0 },
-      left:  { x: cols - 1,   y: position.y },
-      right: { x: 0,          y: position.y },
+      up: { x: position.x, y: rows - 1 },
+      down: { x: position.x, y: 0 },
+      left: { x: cols - 1, y: position.y },
+      right: { x: 0, y: position.y },
     };
 
     switch (direction) {
@@ -229,9 +245,7 @@ export const GameStateProvider: Component<ProviderProps> = (props) => {
     const entered = enteredPos[direction];
     setStore("game", "players", (players) =>
       players.map((p) =>
-        p.position.x === ejected.x && p.position.y === ejected.y
-          ? { ...p, position: entered }
-          : p,
+        p.position.x === ejected.x && p.position.y === ejected.y ? { ...p, position: entered } : p,
       ),
     );
 

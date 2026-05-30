@@ -9,7 +9,8 @@
     "build": "vite build",
     "serve": "vite preview",
     "tsc": "tsc --noEmit",
-    "lint": "eslint"
+    "lint": "eslint",
+    "format": "prettier . --write"
   },
   "license": "MIT",
   "devDependencies": {
