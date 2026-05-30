@@ -1,4 +1,4 @@
-import { GamePiece } from "./types";
+import { GamePiece } from "../types";
 
 export const orientationToStyle = (orientation: GamePiece["orientation"]): string => {
   return (

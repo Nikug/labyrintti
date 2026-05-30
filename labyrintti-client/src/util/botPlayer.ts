@@ -1,4 +1,4 @@
-import { Direction, GamePieceWithObject, GameSettings, GameState, Vector2 } from "./types";
+import { Direction, GamePieceWithObject, GameSettings, GameState, Vector2 } from "../types";
 import { getReachable } from "./pathUtils";
 
 export interface PushAction {

@@ -1,7 +1,7 @@
 import { createEffect, onCleanup } from "solid-js";
 import { useGameState } from "../contexts/GameStateContext";
 import { useGameSettings } from "../contexts/GameSettingsContext";
-import { pickBotPush, pickBotMove } from "../botPlayer";
+import { pickBotPush, pickBotMove } from "../util/botPlayer";
 
 const BOT_DELAY_MS = 1400;
 
@@ -11,6 +11,7 @@ export function useBotPlayer() {
 
   createEffect(() => {
     if (!gameSettings.botsEnabled) return;
+    if (gameState.game.winner !== null) return;
     const activeIdx = gameState.game.activePlayer;
     const phase = gameState.game.phase;
     const active = gameState.game.players[activeIdx];

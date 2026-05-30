@@ -1,4 +1,4 @@
-import { Direction, GamePiece, GamePieceWithObject, Vector2 } from "./types";
+import { Direction, GamePiece, GamePieceWithObject, Vector2 } from "../types";
 
 const openings: Record<GamePiece["type"], Record<Direction, Direction[]>> = {
   I: {
